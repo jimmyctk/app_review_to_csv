@@ -68,13 +68,13 @@ author->uri->label will be extracted and stored as author_uri in a dict:
 
 author_keys = [
         ("uri","label", "author_uri"),
-        ("name","label", "author_name")
-        
+        ("name","label", "author_name"),
         ]  
 
 other_keys = [
         ("im:version","label", "im_version"),
         ("im:rating","label", "im_rating"),
+        ("updated","label", "date_commented"),
         ("id","label", "id"),
         ("title","label", "title"),
         ("content","label","content"),
@@ -223,7 +223,7 @@ def save_reviews(all_reviews, file_name):
     df = pd.DataFrame(all_reviews)
     # Add time column
     ts = datetime.now()
-    df['date'] = ts.strftime('%Y-%m-%dT%H:%M%:%SZ')
+    df['date_logged'] = ts.strftime('%Y-%m-%dT%H:%M%:%SZ')
     # Save to csv
     df.to_csv(file_name, index=False)
     print(f"All reviews flattened and saved to {file_name}")
@@ -238,6 +238,6 @@ def save_json(text, page_no):
     
 no_of_pages = 10
 country = "hk"
-review_id = 1234567890
+review_id = 1550036839
 all_reviews = get_and_collect_reviews(review_id, no_of_pages) 
 save_reviews(all_reviews, define_csv_file_name() )
