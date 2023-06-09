@@ -1,15 +1,21 @@
-# App Review Code
+# App Review Code to CSV
 
 Simple code to allow the gathering and processing of public reviews of apps on the Apple App Store and Google Play Store APIs.
 
-
-## Getting the Data
-App review data is obtained from the App Store and Googl Play Store APIs. Example code for this is shown in the [get_review_data](https://github.com/datasciencecampus/app_review/tree/master/get_review_data) folder. 
+### Example Use for App Store 
+The following code will go get the last 500 reviews and process the JSON response into a flat CSV file. Results from the api are paginated up to a maximum of 10 pages
+```
+    no_of_pages = 10
+    country = "hk"
+    review_id = 1234567890
+    all_reviews = get_and_collect_reviews(review_id, no_of_pages) 
+    save_reviews(all_reviews, define_csv_file_name() )
+```
 
 ## The Apple App Store Review API
 Reviews on published apps in the Apple App store are openly available. A limited number of reviews can be accessed via a rss call to: 
 
-https://itunes.apple.com/{country}/rss/customerreviews/page={page_no}/id={app_id}/sortBy=mostRecent/json
+https://itunes.apple.com/{country}/rss/customerreviews/id={appid}/page={pageno}/sortby=mostrecent/json
 
 - country is the App Store country where you sell it, e.g. gb
 - page_no is the page of the data to return - data is from paginated
@@ -19,14 +25,20 @@ The example Python code calls the API the requests library. The resulting nested
 
 An example of format returned by the API is give in the [example_apple_reviews.json](https://github.com/datasciencecampus/app_review/blob/master/get_review_data/example_apple_reviews.json) file
 
-### Example Use
-The following code will go get the last 500 reviews and process the JSON response into a flat CSV file. Results from the api are paginated up to a maximum of 10 pages
+### Example Use for Play Store
+The processing code currently assumes the response has been saved as a JSON file and then loaded before further processing. The review data could be processed directly from the response above. Assuming the JSON has been loaded to a variable ```reviews_j```:
+
 ```
-    no_of_pages = 10
-    review_id = 1234567890       
-    all_reviews = get_and_collect_reviews(review_id, no_of_pages) 
-    save_reviews(all_reviews, define_csv_file_name() )
+# Process the reviews toa flast file
+all_review_data = process_json(review_j)
+
+# You can save the reviews to CSV file directly
+save_reviews(all_review_data, define_csv_file_name())
+
+# Or convert to a Pandas dataframe abnd manipluate as required
+all_reviews = pd.DataFrame(all_review_data)
 ```
+
 
 
 ## The Google Play Store Review API
@@ -60,18 +72,3 @@ The Google Play reviews are accessed via the Play Console using a private key us
 
 ```
 For the format and details of the returned data please see the [Google Review API Documnetation](https://developers.google.com/android-publisher/api-ref/rest/v3/reviews)
-
-### Example Use
-The processing code currently assumes the response has been saved as a JSON file and then loaded before further processing. The review data could be processed directly from the response above. Assuming the JSON has been loaded to a variable ```reviews_j```:
-
-```
-# Process the reviews toa flast file
-all_review_data = process_json(review_j)
-
-# You can save the reviews to CSV file directly
-save_reviews(all_review_data, define_csv_file_name())
-
-# Or convert to a Pandas dataframe abnd manipluate as required
-all_reviews = pd.DataFrame(all_review_data)
-```
-

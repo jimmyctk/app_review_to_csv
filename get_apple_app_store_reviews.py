@@ -6,7 +6,7 @@ given App ID
 The Apple Review API
 Anyone can retrieve the RSS feed for a given app using : 
 
-https://itunes.apple.com/{country}/rss/customerreviews/page={page no}/id={your app id}/sortBy=mostRecent/json
+https://itunes.apple.com/{country}/rss/customerreviews/id={appid}/page={pageno}/sortby=mostrecent/json
 
 
 - country is the App Store country where you sell it, e.g. gb
@@ -45,7 +45,7 @@ a nest in the JSON the tuple is of the
 e.g.,
 			"author": {
 				"uri": {
-					"label": "https://itunes.apple.com/gb/reviews/id419600570"
+					"label": "https://itunes.apple.com/hk/reviews/id419600570"
 				},
 				"name": {
 					"label": "name1"
@@ -151,7 +151,7 @@ def get_reviews(review_id, page_no):
     """
     
     print(f"Getting reviews from Apple API for page {page_no}")
-    url = f'https://itunes.apple.com/gb/rss/customerreviews/page={page_no}/id={review_id}/sortBy=mostRecent/json'
+    url = f'https://itunes.apple.com/{country}/rss/customerreviews/id={review_id}/page={page_no}/sortby=mostrecent/json'
     response = requests.get(url)
     if response.status_code == 200:
         return response
@@ -236,3 +236,8 @@ def save_json(text, page_no):
         print(f"{text}", file=json_file)
     print(f"JSON response saved to {file_name}")
     
+no_of_pages = 10
+country = "hk"
+review_id = 1234567890
+all_reviews = get_and_collect_reviews(review_id, no_of_pages) 
+save_reviews(all_reviews, define_csv_file_name() )
