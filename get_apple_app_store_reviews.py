@@ -238,6 +238,6 @@ def save_json(text, page_no):
     
 no_of_pages = 10
 country = "hk"
-review_id = 1550036839
+review_id = 1234567890
 all_reviews = get_and_collect_reviews(review_id, no_of_pages) 
 save_reviews(all_reviews, define_csv_file_name() )
