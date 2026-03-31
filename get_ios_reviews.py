@@ -10,47 +10,45 @@ https://itunes.apple.com/{country}/rss/customerreviews/id={appid}/page={pageno}/
 
 
 - country is the App Store country where you sell it, e.g. gb
-- page no is the page of the datato returnj - data is paginated
+- page no is the page of the data to return - data is paginated
 - app id is the number following "id" in the App Store URL
 
 The API is called using the requests library
-Output is in nested JSON, an examples is given in the example json file on the repo.
+Output is in nested JSON, examples are given in the example json file on the repo.
 Each of the nested sections is stored as a list of tuples to aid extraction.
 
 The function will:
  - loop through the required number of pages
- - get the reviews in JSON format using teh requests library
+ - get the reviews in JSON format using the requests library
  - save each JSON response to storage
  - extract each review from each page and collate as a large dictionary
  - save this as a CSV file
  
 Example use:
     
-    no_of_pages = 10
-    review_id = 1234567890       
-    all_reviews = get_and_collect_reviews(review_id, no_of_pages) 
-    save_reviews(all_reviews, define_csv_file_name() )
+    python get_ios_reviews.py <review_id> [country] [no_of_pages]
+    (If review_id has a leading 'id', e.g. id1403690384, it will be stripped.)
 """
 
 import json
 import pandas as pd
 import requests  
 from datetime import datetime
-
+import sys
 
 """
 Define each section of the expected JSON/dict response. Each list represents 
 a nest in the JSON the tuple is of the 
         (JSON Key, JSON nested key, name of extracted data)
 e.g.,
-			"author": {
-				"uri": {
-					"label": "https://itunes.apple.com/hk/reviews/id419600570"
-				},
-				"name": {
-					"label": "name1"
-				},
-			}
+            "author": {
+                "uri": {
+                    "label": "https://itunes.apple.com/hk/reviews/id419600570"
+                },
+                "name": {
+                    "label": "name1"
+                },
+            }
 is captured as 
 author_keys = [
         ("uri","label", "author_uri"),
@@ -64,7 +62,6 @@ author->uri->label will be extracted and stored as author_uri in a dict:
     "author_name" : "name1"
 }
 """
-
 
 author_keys = [
         ("uri","label", "author_uri"),
@@ -104,7 +101,7 @@ def get_and_collect_reviews(review_id, no_of_pages):
         JSON response to create a flattened table
     
     Args:
-        review_id (int) - the ID of the app 
+        review_id (int or str) - the ID of the app 
         no_of_pages (int) - the total number of pages of reviews to return
     
     Returns: 
@@ -114,8 +111,7 @@ def get_and_collect_reviews(review_id, no_of_pages):
     all_reviews = [] 
     # for all pages
     for page in range(no_of_pages):
-    
-        # get the JSON response from the API fopr that page
+        # get the JSON response from the API for that page
         reviews_response = get_reviews(review_id, page+1)
         # Check to see if we have any reviews in the response
         if reviews_response is None:
@@ -139,11 +135,11 @@ def get_and_collect_reviews(review_id, no_of_pages):
 
 def get_reviews(review_id, page_no):
     """ 
-    Get the reviews from the Apple APIfor a given App using the requests package 
+    Get the reviews from the Apple API for a given App using the requests package 
     
     Args:
-        review_id (int) - the id of the Apple App ID you want the reviews from
-        page_no (int) - data is paginated, so this dermines which page number 
+        review_id (int or str) - the id of the Apple App you want the reviews from
+        page_no (int) - data is paginated, so this determines which page number 
         to return
     Returns:
         the response from the api (if status == 200), otherwise None
@@ -186,11 +182,11 @@ def process_reviews(all_reviews, review_list):
         all_reviews (list of dict) - list of all currently extracted reviews
         review_list (list of dict) - list of new reviews to be extracted
     Returns:
-        list of extracted data fro review_list, appended to all_reviews
+        list of extracted data from review_list, appended to all_reviews
     """
     print("Processing the JSON response")
     for review in review_list:
-        review_flat= extract_matches(other_keys, review)
+        review_flat = extract_matches(other_keys, review)
         for section in review_sections:
             review_flat.update(extract_matches(section[1], review[section[0]]))
         all_reviews.append(review_flat)  
@@ -211,7 +207,7 @@ def extract_matches(keys, review_section):
     for entry in review_section:
         for key in keys:
             if entry == key[0]:
-                if key[1]== '':
+                if key[1] == '':
                     review_extract[key[2]] = review_section[entry]
                 else:    
                     review_extract[key[2]] = review_section[entry][key[1]]
@@ -223,7 +219,7 @@ def save_reviews(all_reviews, file_name):
     df = pd.DataFrame(all_reviews)
     # Add time column
     ts = datetime.now()
-    df['date_logged'] = ts.strftime('%Y-%m-%dT%H:%M%:%SZ')
+    df['date_logged'] = ts.strftime('%Y-%m-%dT%H:%M:%SZ')
     # Save to csv
     df.to_csv(file_name, index=False)
     print(f"All reviews flattened and saved to {file_name}")
@@ -235,9 +231,39 @@ def save_json(text, page_no):
     with open(file_name, "w") as json_file:
         print(f"{text}", file=json_file)
     print(f"JSON response saved to {file_name}")
-    
-no_of_pages = 10
-country = "hk"
-review_id = 1234567890
-all_reviews = get_and_collect_reviews(review_id, no_of_pages) 
-save_reviews(all_reviews, define_csv_file_name() )
+
+# --- Script parameters taken from command line ---
+# Usage: python get_ios_reviews.py <review_id> [country] [no_of_pages]
+# Defaults: country='hk', no_of_pages=10
+
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("Usage: python get_ios_reviews.py <review_id> [country] [no_of_pages]")
+        sys.exit(1)
+
+    review_id = sys.argv[1]
+    # Remove "id" prefix if present (case insensitive)
+    if review_id.lower().startswith('id'):
+        review_id = review_id[2:]
+    # Convert to int if possible for compatibility w/ old code, but equally works as str
+    try:
+        review_id = int(review_id)
+    except Exception:
+        pass
+
+    # Country code (default hk)
+    if len(sys.argv) > 2:
+        country = sys.argv[2]
+    else:
+        country = "hk"
+    # Number of pages (default 10)
+    if len(sys.argv) > 3:
+        try:
+            no_of_pages = int(sys.argv[3])
+        except Exception:
+            no_of_pages = 10
+    else:
+        no_of_pages = 10
+
+    all_reviews = get_and_collect_reviews(review_id, no_of_pages)
+    save_reviews(all_reviews, define_csv_file_name())

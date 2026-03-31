@@ -2,9 +2,10 @@
 Jun 2023
 
 Using scraper instead of Google Play Console API
-https://github.com/JoMingyu/google-play-scraper
+https://pypi.org/project/google-play-scraper/
 
 """
+import sys
 from google_play_scraper import Sort, reviews_all
 import csv
 import pycountry
@@ -12,8 +13,15 @@ import pycountry
 #languages = [language.alpha_3 for language in pycountry.languages]
 country_names = ['hk','tw','us','cn']
 languages = ['en','zh']
+
+if len(sys.argv) < 2:
+    print("Usage: python get_google_play_app_reviews.py <App_package_name>")
+    sys.exit(1)
+
+package_name = sys.argv[1]
+
 # Define the CSV file path
-csv_file = 'output.csv'
+csv_file = 'app_review_aos.csv'
 
 # Open the CSV file in write mode
 with open(csv_file, 'w', newline='', encoding='utf-8') as file:
@@ -26,7 +34,7 @@ with open(csv_file, 'w', newline='', encoding='utf-8') as file:
     for country in country_names:
         for language in languages:
             result = reviews_all(
-                'package',
+                package_name,
                 lang=language,
                 country=country
             )
